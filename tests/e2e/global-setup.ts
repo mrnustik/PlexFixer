@@ -31,4 +31,12 @@ export default async function globalSetup() {
 
   // ---- Movies: warning (dots) ----
   await touch(`${movies}/The.Matrix.(1999).mkv`);
+
+  // ---- Rename test fixtures ----
+  // A movie with a bare year (rename to wrapped year)
+  await touch(`${movies}/Rename.Me 2005.mkv`);
+  // A TV show with missing year (rename test)
+  await touch(`${tv}/Rename Me Show/Season 01/Rename Me Show - S01E01.mkv`);
+  // A season with wrong format
+  await touch(`${tv}/Good Show (2010)/S1/Good Show - S01E01.mkv`);
 }

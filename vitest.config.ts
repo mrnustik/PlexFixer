@@ -4,6 +4,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
+    exclude: ["tests/e2e/**", "node_modules/**"],
     environment: "node",
     coverage: {
       provider: "v8",
