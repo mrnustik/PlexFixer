@@ -839,7 +839,10 @@ export default function LibraryBrowser() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [tab, setTab] = useState<"tv" | "movies">("tv");
   const [onlyIssues, setOnlyIssues] = useState(false);
+  const [search, setSearch] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const query = search.trim().toLowerCase();
 
   // Open paths state — persists across data refreshes
   const [openPaths, setOpenPaths] = useState<Set<string>>(new Set());
@@ -901,6 +904,31 @@ export default function LibraryBrowser() {
       .finally(() => setLoading(false));
   }, [refreshKey]);
 
+  // Auto-open shows/seasons that match only through child names
+  useEffect(() => {
+    if (!query || !data) return;
+    setOpenPaths((prev) => {
+      const next = new Set(prev);
+      for (const show of data.tv) {
+        if (show.name.toLowerCase().includes(query)) continue;
+        for (const season of show.seasons) {
+          if (season.name.toLowerCase().includes(query)) {
+            next.add(show.path);
+            continue;
+          }
+          for (const ep of season.episodes) {
+            if (ep.name.toLowerCase().includes(query)) {
+              next.add(show.path);
+              next.add(season.path);
+              break;
+            }
+          }
+        }
+      }
+      return next;
+    });
+  }, [query, data]);
+
   if (loading) {
     return (
       <div className="flex flex-col items-center gap-3 py-20 text-gray-400 dark:text-gray-500">
@@ -920,7 +948,24 @@ export default function LibraryBrowser() {
 
   if (!data) return null;
 
-  const selectableOps = tab === "tv" ? collectTvOps(data.tv) : collectMovieOps(data.movies);
+  const filteredShows = query
+    ? data.tv.filter(
+        (show) =>
+          show.name.toLowerCase().includes(query) ||
+          show.seasons.some(
+            (s) =>
+              s.name.toLowerCase().includes(query) ||
+              s.episodes.some((e) => e.name.toLowerCase().includes(query))
+          )
+      )
+    : data.tv;
+
+  const filteredMovies = query
+    ? data.movies.filter((m) => m.name.toLowerCase().includes(query))
+    : data.movies;
+
+  const selectableOps =
+    tab === "tv" ? collectTvOps(filteredShows) : collectMovieOps(filteredMovies);
   const allSelected =
     selectableOps.length > 0 && selectableOps.every((op) => selected.has(op.from));
 
@@ -937,6 +982,16 @@ export default function LibraryBrowser() {
       <OpenPathsContext.Provider value={openPathsCtx}>
         <BulkSelectionContext.Provider value={bulkCtx}>
           <div className="space-y-4">
+            {/* Search */}
+            <input
+              data-testid="search-input"
+              type="search"
+              placeholder="Search by name or episode…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 placeholder-gray-400 focus:border-blue-400 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:placeholder-gray-500 dark:focus:border-blue-500"
+            />
+
             {/* Tabs + filter */}
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
@@ -1002,8 +1057,12 @@ export default function LibraryBrowser() {
                     <code className="font-mono text-xs">PLEX_TV_LIBRARY_PATHS</code> in your
                     environment.
                   </p>
+                ) : filteredShows.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                    No results for &ldquo;{search}&rdquo;
+                  </p>
                 ) : (
-                  data.tv.map((show) => (
+                  filteredShows.map((show) => (
                     <ShowRow key={show.path} show={show} onlyIssues={onlyIssues} />
                   ))
                 ))}
@@ -1014,8 +1073,12 @@ export default function LibraryBrowser() {
                     <code className="font-mono text-xs">PLEX_MOVIES_LIBRARY_PATHS</code> in your
                     environment.
                   </p>
+                ) : filteredMovies.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                    No results for &ldquo;{search}&rdquo;
+                  </p>
                 ) : (
-                  data.movies.map((movie) => (
+                  filteredMovies.map((movie) => (
                     <MovieRow key={movie.path} movie={movie} onlyIssues={onlyIssues} />
                   ))
                 ))}

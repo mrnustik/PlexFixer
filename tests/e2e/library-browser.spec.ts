@@ -366,6 +366,44 @@ test.describe("PlexFixer library browser", () => {
     }
   });
 
+  // ---- Search ----
+
+  test("search input is visible", async ({ page }) => {
+    await expect(page.getByTestId("search-input")).toBeVisible();
+  });
+
+  test("searching by show name filters TV shows", async ({ page }) => {
+    await page.getByTestId("search-input").fill("Breaking Bad");
+    await expect(page.getByText("Breaking Bad (2008)")).toBeVisible();
+    await expect(page.locator("button", { hasText: "Show Without Year" })).not.toBeVisible();
+    await expect(page.getByText("Good Show (2010)")).not.toBeVisible();
+  });
+
+  test("clearing search restores all shows", async ({ page }) => {
+    await page.getByTestId("search-input").fill("Breaking Bad");
+    await expect(page.locator("button", { hasText: "Show Without Year" })).not.toBeVisible();
+    await page.getByTestId("search-input").clear();
+    await expect(page.locator("button", { hasText: "Show Without Year" })).toBeVisible();
+  });
+
+  test("searching by episode name shows the parent show", async ({ page }) => {
+    await page.getByTestId("search-input").fill("Pilot");
+    await expect(page.getByText("Breaking Bad (2008)")).toBeVisible();
+    await expect(page.locator("button", { hasText: "Show Without Year" })).not.toBeVisible();
+  });
+
+  test("searching movies by name filters results", async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+    await page.getByTestId("search-input").fill("Inception");
+    await expect(page.getByText("Inception 2010.mkv")).toBeVisible();
+    await expect(page.getByText("The Dark Knight (2008).mkv")).not.toBeVisible();
+  });
+
+  test("shows no-results message when search has no match", async ({ page }) => {
+    await page.getByTestId("search-input").fill("xyznonexistent");
+    await expect(page.getByText(/No results for/)).toBeVisible();
+  });
+
   // ---- Year lookup ----
 
   test("Look up year button appears for a show with SHOW_MISSING_YEAR", async ({ page }) => {
