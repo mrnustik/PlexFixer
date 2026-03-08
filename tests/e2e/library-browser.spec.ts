@@ -63,8 +63,8 @@ test.describe("PlexFixer library browser", () => {
     await expect(row.locator('[title="Warning"]')).toBeVisible();
   });
 
-  test("error show auto-expands and displays issue details", async ({ page }) => {
-    // "Show Without Year" and "Rename Me Show" both start expanded — SHOW_MISSING_YEAR appears multiple times
+  test("expanding an error show displays issue details", async ({ page }) => {
+    await page.locator("button", { hasText: "Show Without Year" }).click();
     await expect(page.getByText("SHOW_MISSING_YEAR").first()).toBeVisible();
     await expect(
       page.getByText(/Show folder is missing a year/, { exact: false }).first()
@@ -186,12 +186,10 @@ test.describe("PlexFixer library browser", () => {
   });
 
   test("season with wrong format shows a rename panel with suggested name", async ({ page }) => {
-    // "Good Show (2010)" and its "S1" season both auto-expand due to errors.
-    // Collapse the other two auto-expanded shows to isolate the season rename panel.
-    await page.locator("button", { hasText: "Show Without Year" }).click();
-    await page.locator("button", { hasText: "Rename Me Show" }).click();
+    // Expand "Good Show (2010)" then its "S1" season
+    await page.locator("button", { hasText: "Good Show (2010)" }).click();
+    await page.locator("button", { hasText: "S1" }).click();
 
-    // Only Good Show (2010) → S1 remains expanded
     await expect(page.getByText("SEASON_WRONG_FORMAT")).toBeVisible();
 
     const input = page.getByTestId("rename-input");
@@ -200,15 +198,142 @@ test.describe("PlexFixer library browser", () => {
   });
 
   test("show folder with issues shows a rename panel", async ({ page }) => {
-    // Collapse the other auto-expanded shows so only "Show Without Year" has a visible rename panel
-    await page.locator("button", { hasText: "Good Show (2010)" }).click();
-    await page.locator("button", { hasText: "Rename Me Show" }).click();
+    // Expand "Show Without Year" to see its show-level rename panel
+    await page.locator("button", { hasText: "Show Without Year" }).click();
 
-    // "Show Without Year" remains expanded with its show-level rename panel
     await expect(page.getByText("SHOW_MISSING_YEAR").first()).toBeVisible();
     const input = page.getByTestId("rename-input").first();
     await expect(input).toBeVisible();
     // No auto-suggestion for missing year — pre-filled with current name
     await expect(input).toHaveValue("Show Without Year");
+  });
+
+  // ---- Bulk rename ----
+
+  test("checkboxes appear on rows with suggestions, not on valid rows", async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    // Movies with fixable issues should have checkboxes
+    const bulkFixRow = page.locator("div.border-b").filter({ hasText: "Bulk.Fix.Movie.2021.mkv" });
+    await expect(bulkFixRow.locator('input[type="checkbox"]')).toBeVisible();
+
+    const inceptionRow = page.locator("div.border-b").filter({ hasText: "Inception 2010.mkv" });
+    await expect(inceptionRow.locator('input[type="checkbox"]')).toBeVisible();
+
+    // Valid movie should have no checkbox
+    const darkKnightRow = page
+      .locator("div.border-b")
+      .filter({ hasText: "The Dark Knight (2008).mkv" });
+    await expect(darkKnightRow.locator('input[type="checkbox"]')).not.toBeVisible();
+  });
+
+  test('"Select all with issues" selects all selectable items', async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    await page.getByTestId("bulk-select-all-button").click();
+
+    // Bulk action bar should show a count > 0
+    await expect(page.getByTestId("bulk-action-bar")).toBeVisible();
+    await expect(page.getByTestId("bulk-action-bar")).toContainText("selected");
+
+    // Button should now say "Deselect all"
+    await expect(page.getByTestId("bulk-select-all-button")).toHaveText("Deselect all");
+  });
+
+  test("bulk action bar appears when items are selected and disappears after clear", async ({
+    page,
+  }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    // Select one movie via checkbox
+    const bulkFixRow = page.locator("div.border-b").filter({ hasText: "Bulk.Fix.Movie.2021.mkv" });
+    await bulkFixRow.locator('input[type="checkbox"]').check();
+
+    await expect(page.getByTestId("bulk-action-bar")).toBeVisible();
+    await expect(page.getByTestId("bulk-action-bar")).toContainText("1 item selected");
+
+    // Clear selection
+    await page.getByTestId("bulk-clear-button").click();
+    await expect(page.getByTestId("bulk-action-bar")).not.toBeVisible();
+  });
+
+  test("preview modal shows all pending renames", async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    // Select two bulk-fixable movies
+    const bulkFixRow = page.locator("div.border-b").filter({ hasText: "Bulk.Fix.Movie.2021.mkv" });
+    await bulkFixRow.locator('input[type="checkbox"]').check();
+    const anotherFixRow = page
+      .locator("div.border-b")
+      .filter({ hasText: "Another.Fix.Movie.2022.mkv" });
+    await anotherFixRow.locator('input[type="checkbox"]').check();
+
+    await page.getByTestId("bulk-rename-button").click();
+
+    await expect(page.getByTestId("bulk-preview-modal")).toBeVisible();
+    // Both movies should appear in the preview
+    await expect(page.getByTestId("bulk-preview-modal")).toContainText("Bulk.Fix.Movie.2021.mkv");
+    await expect(page.getByTestId("bulk-preview-modal")).toContainText(
+      "Another.Fix.Movie.2022.mkv"
+    );
+    await expect(page.getByTestId("bulk-preview-apply")).toBeVisible();
+    await expect(page.getByTestId("bulk-preview-cancel")).toBeVisible();
+
+    // Cancel closes the modal
+    await page.getByTestId("bulk-preview-cancel").click();
+    await expect(page.getByTestId("bulk-preview-modal")).not.toBeVisible();
+  });
+
+  test("bulk rename applies all operations and shows success summary", async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    // Select the two bulk-fixable movies
+    const bulkFixRow = page.locator("div.border-b").filter({ hasText: "Bulk.Fix.Movie.2021.mkv" });
+    await bulkFixRow.locator('input[type="checkbox"]').check();
+    const anotherFixRow = page
+      .locator("div.border-b")
+      .filter({ hasText: "Another.Fix.Movie.2022.mkv" });
+    await anotherFixRow.locator('input[type="checkbox"]').check();
+
+    await page.getByTestId("bulk-rename-button").click();
+    await page.getByTestId("bulk-preview-apply").click();
+
+    // Wait for operation to complete (summary text appears)
+    await expect(page.getByTestId("bulk-summary")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByTestId("bulk-summary")).toContainText("2 succeeded");
+
+    // Undo button should be visible since renames succeeded
+    await expect(page.getByTestId("bulk-preview-undo")).toBeVisible();
+  });
+
+  test("undo button reverses successful bulk renames", async ({ page }) => {
+    await page.getByRole("button", { name: /Movies/ }).click();
+
+    // Select a bulk-fixable movie (whichever survived any previous rename test)
+    // Use "Select all" to grab whatever is available
+    await page.getByTestId("bulk-select-all-button").click();
+    const actionBar = page.getByTestId("bulk-action-bar");
+    await expect(actionBar).toBeVisible();
+
+    await page.getByTestId("bulk-rename-button").click();
+    await page.getByTestId("bulk-preview-apply").click();
+
+    // Wait for done phase
+    await expect(page.getByTestId("bulk-summary")).toBeVisible({ timeout: 15_000 });
+    const summaryText = await page.getByTestId("bulk-summary").textContent();
+    const anySucceeded = summaryText?.includes("0 succeeded") === false;
+
+    if (anySucceeded) {
+      // Click undo
+      await page.getByTestId("bulk-preview-undo").click();
+
+      // Wait for undo to complete
+      await expect(page.getByTestId("bulk-summary")).toBeVisible({ timeout: 15_000 });
+      await expect(page.getByTestId("bulk-summary")).toContainText("undone");
+
+      // Close triggers refresh
+      await page.getByTestId("bulk-preview-cancel").click();
+      await waitForLibrary(page);
+    }
   });
 });

@@ -39,4 +39,9 @@ export default async function globalSetup() {
   await touch(`${tv}/Rename Me Show/Season 01/Rename Me Show - S01E01.mkv`);
   // A season with wrong format
   await touch(`${tv}/Good Show (2010)/S1/Good Show - S01E01.mkv`);
+
+  // ---- Bulk rename test fixtures ----
+  // Two movies with dots + bare year — both have auto-fixable suggestions
+  await touch(`${movies}/Bulk.Fix.Movie.2021.mkv`);
+  await touch(`${movies}/Another.Fix.Movie.2022.mkv`);
 }
