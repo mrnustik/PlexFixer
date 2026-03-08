@@ -1,0 +1,18 @@
+services:
+  plexfixer:
+    build: .
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      - PLEX_TV_LIBRARY_PATHS=${PLEX_TV_LIBRARY_PATHS:-/media/tv}
+      - PLEX_MOVIES_LIBRARY_PATHS=${PLEX_MOVIES_LIBRARY_PATHS:-/media/movies}
+    volumes:
+      # Mount your Plex media directories (read-write needed for renames)
+      - ${PLEX_TV_LIBRARY_PATHS:-/media/tv}:${PLEX_TV_LIBRARY_PATHS:-/media/tv}
+      - ${PLEX_MOVIES_LIBRARY_PATHS:-/media/movies}:${PLEX_MOVIES_LIBRARY_PATHS:-/media/movies}
+      # Persist app configuration
+      - plexfixer_config:/app/config
+    restart: unless-stopped
+
+volumes:
+  plexfixer_config:
