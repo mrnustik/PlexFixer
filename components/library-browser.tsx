@@ -30,6 +30,12 @@ const BulkSelectionContext = createContext<BulkSelectionCtx>({
   clear: () => {},
 });
 
+// ---- Open Paths Context ----
+
+type OpenPathsCtx = { isOpen: (path: string) => boolean; toggle: (path: string) => void };
+
+const OpenPathsContext = createContext<OpenPathsCtx>({ isOpen: () => false, toggle: () => {} });
+
 // ---- Refresh context ----
 
 const RefreshContext = createContext<() => void>(() => {});
@@ -221,7 +227,8 @@ function BulkCheckbox({ op }: { op: SelectionOp }) {
 // ---- EpisodeRow ----
 
 function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssues: boolean }) {
-  const [open, setOpen] = useState(false);
+  const { isOpen, toggle } = useContext(OpenPathsContext);
+  const open = isOpen(episode.path);
   const status = getStatus(episode.issues);
   if (onlyIssues && status === "valid") return null;
 
@@ -237,7 +244,7 @@ function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssue
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left text-sm"
-          onClick={() => episode.issues.length > 0 && setOpen((o) => !o)}
+          onClick={() => episode.issues.length > 0 && toggle(episode.path)}
         >
           <StatusBadge status={status} />
           <span className="flex-1 truncate font-mono text-xs text-gray-700 dark:text-gray-300">
@@ -265,8 +272,9 @@ function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssue
 // ---- SeasonRow ----
 
 function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues: boolean }) {
+  const { isOpen, toggle } = useContext(OpenPathsContext);
   const status = seasonStatus(season);
-  const [open, setOpen] = useState(false);
+  const open = isOpen(season.path);
 
   if (onlyIssues && status === "valid") return null;
 
@@ -300,7 +308,7 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left text-sm"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => toggle(season.path)}
         >
           <span className="w-3 shrink-0 text-center text-gray-400 dark:text-gray-500">
             {open ? "▾" : "▸"}
@@ -334,8 +342,9 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
 // ---- ShowRow ----
 
 function ShowRow({ show, onlyIssues }: { show: ValidatedShow; onlyIssues: boolean }) {
+  const { isOpen, toggle } = useContext(OpenPathsContext);
   const status = showStatus(show);
-  const [open, setOpen] = useState(false);
+  const open = isOpen(show.path);
 
   if (onlyIssues && status === "valid") return null;
 
@@ -353,7 +362,7 @@ function ShowRow({ show, onlyIssues }: { show: ValidatedShow; onlyIssues: boolea
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left"
-          onClick={() => setOpen((o) => !o)}
+          onClick={() => toggle(show.path)}
         >
           <span className="w-3 shrink-0 text-center text-sm text-gray-400 dark:text-gray-500">
             {open ? "▾" : "▸"}
@@ -388,7 +397,8 @@ function ShowRow({ show, onlyIssues }: { show: ValidatedShow; onlyIssues: boolea
 // ---- MovieRow ----
 
 function MovieRow({ movie, onlyIssues }: { movie: ValidatedMovie; onlyIssues: boolean }) {
-  const [open, setOpen] = useState(false);
+  const { isOpen, toggle } = useContext(OpenPathsContext);
+  const open = isOpen(movie.path);
   const status = getStatus(movie.issues);
   if (onlyIssues && status === "valid") return null;
 
@@ -404,7 +414,7 @@ function MovieRow({ movie, onlyIssues }: { movie: ValidatedMovie; onlyIssues: bo
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left"
-          onClick={() => movie.issues.length > 0 && setOpen((o) => !o)}
+          onClick={() => movie.issues.length > 0 && toggle(movie.path)}
         >
           <StatusBadge status={status} size="md" />
           <span className="flex-1 font-medium text-gray-800 dark:text-gray-200">{movie.name}</span>
@@ -759,6 +769,20 @@ export default function LibraryBrowser() {
   const [onlyIssues, setOnlyIssues] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Open paths state — persists across data refreshes
+  const [openPaths, setOpenPaths] = useState<Set<string>>(new Set());
+
+  const openPathsCtx: OpenPathsCtx = {
+    isOpen: (path) => openPaths.has(path),
+    toggle: (path) =>
+      setOpenPaths((prev) => {
+        const next = new Set(prev);
+        if (next.has(path)) next.delete(path);
+        else next.add(path);
+        return next;
+      }),
+  };
+
   // Bulk selection state
   const [selected, setSelected] = useState<Map<string, SelectionOp>>(new Map());
   const [showModal, setShowModal] = useState(false);
@@ -838,134 +862,136 @@ export default function LibraryBrowser() {
 
   return (
     <RefreshContext.Provider value={refresh}>
-      <BulkSelectionContext.Provider value={bulkCtx}>
-        <div className="space-y-4">
-          {/* Tabs + filter */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
-              {(["tv", "movies"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => handleTabChange(t)}
-                  className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
-                    tab === t
-                      ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100"
-                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  }`}
-                >
-                  {t === "tv" ? `TV Shows (${data.tv.length})` : `Movies (${data.movies.length})`}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-3">
-              {selectableOps.length > 0 && (
-                <button
-                  data-testid="bulk-select-all-button"
-                  onClick={handleSelectAll}
-                  className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
-                >
-                  {allSelected ? "Deselect all" : "Select all with issues"}
-                </button>
-              )}
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none dark:text-gray-400">
-                <input
-                  type="checkbox"
-                  checked={onlyIssues}
-                  onChange={(e) => setOnlyIssues(e.target.checked)}
-                  className="accent-blue-600"
-                />
-                Show only issues
-              </label>
-            </div>
-          </div>
-
-          {/* Summary */}
-          <SummaryBar data={data} tab={tab} />
-
-          {/* Scan errors */}
-          {data.errors.length > 0 && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
-              <p className="font-medium">Scan errors ({data.errors.length})</p>
-              <ul className="mt-1 space-y-0.5">
-                {data.errors.map((e, i) => (
-                  <li key={i} className="font-mono text-xs">
-                    {e.path}: {e.message}
-                  </li>
+      <OpenPathsContext.Provider value={openPathsCtx}>
+        <BulkSelectionContext.Provider value={bulkCtx}>
+          <div className="space-y-4">
+            {/* Tabs + filter */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
+                {(["tv", "movies"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => handleTabChange(t)}
+                    className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                      tab === t
+                        ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}
+                  >
+                    {t === "tv" ? `TV Shows (${data.tv.length})` : `Movies (${data.movies.length})`}
+                  </button>
                 ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Content */}
-          <div className="rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
-            {tab === "tv" &&
-              (data.tv.length === 0 ? (
-                <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
-                  No TV library configured. Set{" "}
-                  <code className="font-mono text-xs">PLEX_TV_LIBRARY_PATHS</code> in your
-                  environment.
-                </p>
-              ) : (
-                data.tv.map((show) => (
-                  <ShowRow key={show.path} show={show} onlyIssues={onlyIssues} />
-                ))
-              ))}
-            {tab === "movies" &&
-              (data.movies.length === 0 ? (
-                <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
-                  No movies library configured. Set{" "}
-                  <code className="font-mono text-xs">PLEX_MOVIES_LIBRARY_PATHS</code> in your
-                  environment.
-                </p>
-              ) : (
-                data.movies.map((movie) => (
-                  <MovieRow key={movie.path} movie={movie} onlyIssues={onlyIssues} />
-                ))
-              ))}
-          </div>
-
-          {/* Bulk action bar */}
-          {selected.size > 0 && (
-            <div
-              data-testid="bulk-action-bar"
-              className="sticky bottom-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg dark:border-blue-800 dark:bg-blue-900/30"
-            >
-              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                {selected.size} item{selected.size !== 1 ? "s" : ""} selected
-              </span>
-              <div className="flex gap-2">
-                <button
-                  data-testid="bulk-clear-button"
-                  onClick={bulkCtx.clear}
-                  className="rounded px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900"
-                >
-                  Clear
-                </button>
-                <button
-                  data-testid="bulk-rename-button"
-                  onClick={() => setShowModal(true)}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
-                >
-                  Bulk Rename…
-                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                {selectableOps.length > 0 && (
+                  <button
+                    data-testid="bulk-select-all-button"
+                    onClick={handleSelectAll}
+                    className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+                  >
+                    {allSelected ? "Deselect all" : "Select all with issues"}
+                  </button>
+                )}
+                <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none dark:text-gray-400">
+                  <input
+                    type="checkbox"
+                    checked={onlyIssues}
+                    onChange={(e) => setOnlyIssues(e.target.checked)}
+                    className="accent-blue-600"
+                  />
+                  Show only issues
+                </label>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* Preview modal */}
-        {showModal && (
-          <BulkPreviewModal
-            operations={[...selected.values()]}
-            onClose={() => setShowModal(false)}
-            onDone={() => {
-              setShowModal(false);
-              setSelected(new Map());
-              refresh();
-            }}
-          />
-        )}
-      </BulkSelectionContext.Provider>
+            {/* Summary */}
+            <SummaryBar data={data} tab={tab} />
+
+            {/* Scan errors */}
+            {data.errors.length > 0 && (
+              <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
+                <p className="font-medium">Scan errors ({data.errors.length})</p>
+                <ul className="mt-1 space-y-0.5">
+                  {data.errors.map((e, i) => (
+                    <li key={i} className="font-mono text-xs">
+                      {e.path}: {e.message}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Content */}
+            <div className="rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
+              {tab === "tv" &&
+                (data.tv.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                    No TV library configured. Set{" "}
+                    <code className="font-mono text-xs">PLEX_TV_LIBRARY_PATHS</code> in your
+                    environment.
+                  </p>
+                ) : (
+                  data.tv.map((show) => (
+                    <ShowRow key={show.path} show={show} onlyIssues={onlyIssues} />
+                  ))
+                ))}
+              {tab === "movies" &&
+                (data.movies.length === 0 ? (
+                  <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
+                    No movies library configured. Set{" "}
+                    <code className="font-mono text-xs">PLEX_MOVIES_LIBRARY_PATHS</code> in your
+                    environment.
+                  </p>
+                ) : (
+                  data.movies.map((movie) => (
+                    <MovieRow key={movie.path} movie={movie} onlyIssues={onlyIssues} />
+                  ))
+                ))}
+            </div>
+
+            {/* Bulk action bar */}
+            {selected.size > 0 && (
+              <div
+                data-testid="bulk-action-bar"
+                className="sticky bottom-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg dark:border-blue-800 dark:bg-blue-900/30"
+              >
+                <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
+                  {selected.size} item{selected.size !== 1 ? "s" : ""} selected
+                </span>
+                <div className="flex gap-2">
+                  <button
+                    data-testid="bulk-clear-button"
+                    onClick={bulkCtx.clear}
+                    className="rounded px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900"
+                  >
+                    Clear
+                  </button>
+                  <button
+                    data-testid="bulk-rename-button"
+                    onClick={() => setShowModal(true)}
+                    className="rounded bg-blue-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-700"
+                  >
+                    Bulk Rename…
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Preview modal */}
+          {showModal && (
+            <BulkPreviewModal
+              operations={[...selected.values()]}
+              onClose={() => setShowModal(false)}
+              onDone={() => {
+                setShowModal(false);
+                setSelected(new Map());
+                refresh();
+              }}
+            />
+          )}
+        </BulkSelectionContext.Provider>
+      </OpenPathsContext.Provider>
     </RefreshContext.Provider>
   );
 }
