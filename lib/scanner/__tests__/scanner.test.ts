@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import type { Dirent, Stats } from "fs";
+import type { Stats } from "fs";
 import { scanLibraryPaths } from "../scanner";
 import type { ScanError } from "../types";
 
@@ -12,16 +12,20 @@ vi.mock("fs", () => ({
 
 import { promises as fs } from "fs";
 
-const mockReaddir = vi.mocked(fs.readdir);
-const mockStat = vi.mocked(fs.stat);
+// Cast mocks to `any` to avoid Dirent<string> vs Dirent<Buffer> generics mismatch
+// across different @types/node versions. Runtime behaviour is tested, not types.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockReaddir = vi.mocked(fs.readdir) as any;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const mockStat = vi.mocked(fs.stat) as any;
 
-function makeDirent(name: string, isDir: boolean): Dirent {
+function makeDirent(name: string, isDir: boolean) {
   return {
     name,
     isDirectory: () => isDir,
     isFile: () => !isDir,
     isSymbolicLink: () => false,
-  } as unknown as Dirent;
+  };
 }
 
 function makeStats(size: number, mtime = new Date("2024-01-01")): Stats {
@@ -47,7 +51,7 @@ describe("scanLibraryPaths", () => {
   });
 
   it("collects video files with correct metadata", async () => {
-    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mkv", false)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mkv", false)]);
     mockStat.mockResolvedValueOnce(makeStats(1024 * 1024 * 500));
 
     const errors: ScanError[] = [];
@@ -67,7 +71,7 @@ describe("scanLibraryPaths", () => {
       makeDirent("cover.jpg", false),
       makeDirent("info.nfo", false),
       makeDirent("subtitle.srt", false),
-    ] as Dirent[]);
+    ]);
 
     const errors: ScanError[] = [];
     const [folder] = await scanLibraryPaths(["/media/tv"], errors);
@@ -79,7 +83,7 @@ describe("scanLibraryPaths", () => {
     mockReaddir.mockResolvedValueOnce([
       makeDirent(".hidden", false),
       makeDirent(".DS_Store", false),
-    ] as Dirent[]);
+    ]);
 
     const errors: ScanError[] = [];
     const [folder] = await scanLibraryPaths(["/media/tv"], errors);
@@ -90,9 +94,9 @@ describe("scanLibraryPaths", () => {
 
   it("recursively scans subdirectories", async () => {
     // Root: one subfolder
-    mockReaddir.mockResolvedValueOnce([makeDirent("Show Name (2020)", true)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("Show Name (2020)", true)]);
     // Subfolder: one video file
-    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mp4", false)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mp4", false)]);
     mockStat.mockResolvedValueOnce(makeStats(2048));
 
     const errors: ScanError[] = [];
@@ -117,7 +121,7 @@ describe("scanLibraryPaths", () => {
   });
 
   it("skips a file and records an error when stat fails", async () => {
-    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mkv", false)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("episode.mkv", false)]);
     mockStat.mockRejectedValueOnce(new Error("ENOENT: no such file"));
 
     const errors: ScanError[] = [];
@@ -129,9 +133,9 @@ describe("scanLibraryPaths", () => {
   });
 
   it("scans multiple root paths independently", async () => {
-    mockReaddir.mockResolvedValueOnce([makeDirent("movie.mkv", false)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("movie.mkv", false)]);
     mockStat.mockResolvedValueOnce(makeStats(100));
-    mockReaddir.mockResolvedValueOnce([makeDirent("show.mp4", false)] as Dirent[]);
+    mockReaddir.mockResolvedValueOnce([makeDirent("show.mp4", false)]);
     mockStat.mockResolvedValueOnce(makeStats(200));
 
     const errors: ScanError[] = [];
