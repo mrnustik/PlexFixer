@@ -19,26 +19,27 @@ function applyTheme(t: Theme) {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
+  // Lazy initializer reads localStorage only on the client (avoids setState-in-effect)
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return "system";
+    return (localStorage.getItem("theme") as Theme) ?? "system";
+  });
 
+  // Apply theme class to <html> whenever theme changes; listen for system pref changes
   useEffect(() => {
-    const stored = (localStorage.getItem("theme") as Theme) ?? "system";
-    setThemeState(stored);
-    applyTheme(stored);
+    applyTheme(theme);
+
+    if (theme !== "system") return;
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = () => {
-      const current = (localStorage.getItem("theme") as Theme) ?? "system";
-      if (current === "system") applyTheme("system");
-    };
+    const handler = () => applyTheme("system");
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, []);
+  }, [theme]);
 
   function setTheme(t: Theme) {
     setThemeState(t);
     localStorage.setItem("theme", t);
-    applyTheme(t);
   }
 
   return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
