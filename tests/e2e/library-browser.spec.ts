@@ -365,4 +365,55 @@ test.describe("PlexFixer library browser", () => {
       await waitForLibrary(page);
     }
   });
+
+  // ---- Year lookup ----
+
+  test("Look up year button appears for a show with SHOW_MISSING_YEAR", async ({ page }) => {
+    // "Show Without Year" has SHOW_MISSING_YEAR
+    await page.locator("button", { hasText: "Show Without Year" }).click();
+    await expect(page.getByTestId("lookup-year-btn")).toBeVisible();
+  });
+
+  test("Look up year button does NOT appear for shows without SHOW_MISSING_YEAR", async ({
+    page,
+  }) => {
+    // "Breaking Bad (2008)" has no SHOW_MISSING_YEAR issue
+    await page.locator("button", { hasText: "Breaking Bad (2008)" }).click();
+    await expect(page.getByTestId("lookup-year-btn")).not.toBeVisible();
+  });
+
+  test("clicking Look up year shows suggestions from mocked API", async ({ page }) => {
+    await page.route("/api/lookup/show-year*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([
+          { name: "Show Without Year", year: 2015 },
+          { name: "Show Without Year: Origins", year: 2018 },
+        ]),
+      });
+    });
+
+    await page.locator("button", { hasText: "Show Without Year" }).click();
+    await page.getByTestId("lookup-year-btn").click();
+
+    await expect(page.getByTestId("lookup-result-2015")).toBeVisible();
+    await expect(page.getByTestId("lookup-result-2018")).toBeVisible();
+  });
+
+  test("clicking a year suggestion populates the rename input", async ({ page }) => {
+    await page.route("/api/lookup/show-year*", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([{ name: "Show Without Year", year: 2015 }]),
+      });
+    });
+
+    await page.locator("button", { hasText: "Show Without Year" }).click();
+    await page.getByTestId("lookup-year-btn").click();
+    await page.getByTestId("lookup-result-2015").click();
+
+    await expect(page.getByTestId("rename-input")).toHaveValue("Show Without Year (2015)");
+  });
 });

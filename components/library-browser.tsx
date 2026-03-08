@@ -121,6 +121,71 @@ function IssueList({ issues }: { issues: ValidationIssue[] }) {
 
 // ---- RenamePanel ----
 
+type ShowYearResult = { name: string; year: number };
+
+function YearLookup({
+  showName,
+  onSelect,
+}: {
+  showName: string;
+  onSelect: (name: string, year: number) => void;
+}) {
+  const [lookupStatus, setLookupStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [results, setResults] = useState<ShowYearResult[]>([]);
+  const [lookupError, setLookupError] = useState("");
+
+  async function lookup() {
+    setLookupStatus("loading");
+    setResults([]);
+    setLookupError("");
+    try {
+      const res = await fetch(`/api/lookup/show-year?q=${encodeURIComponent(showName)}`);
+      const data = (await res.json()) as ShowYearResult[] | { error: string };
+      if (!res.ok || "error" in data) {
+        setLookupStatus("error");
+        setLookupError("error" in data ? data.error : "Lookup failed");
+      } else {
+        setResults(data);
+        setLookupStatus("done");
+      }
+    } catch {
+      setLookupStatus("error");
+      setLookupError("Network error");
+    }
+  }
+
+  return (
+    <div className="mt-2">
+      <button
+        data-testid="lookup-year-btn"
+        onClick={lookup}
+        disabled={lookupStatus === "loading"}
+        className="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-600 hover:bg-gray-100 disabled:opacity-50 dark:border-gray-600 dark:bg-gray-900 dark:text-gray-400 dark:hover:bg-gray-800"
+      >
+        {lookupStatus === "loading" ? "Looking up…" : "Look up year"}
+      </button>
+      {lookupStatus === "error" && <span className="ml-2 text-xs text-red-500">{lookupError}</span>}
+      {lookupStatus === "done" && results.length === 0 && (
+        <span className="ml-2 text-xs text-gray-500">No results found</span>
+      )}
+      {results.length > 0 && (
+        <div className="mt-1.5 flex flex-wrap gap-1.5">
+          {results.map((r) => (
+            <button
+              key={`${r.name}-${r.year}`}
+              data-testid={`lookup-result-${r.year}`}
+              onClick={() => onSelect(r.name, r.year)}
+              className="rounded-full border border-blue-300 bg-blue-50 px-2 py-0.5 text-xs text-blue-700 hover:bg-blue-100 dark:border-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:hover:bg-blue-900/50"
+            >
+              {r.name} ({r.year})
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function RenamePanel({
   currentPath,
   currentName,
@@ -133,6 +198,7 @@ function RenamePanel({
   const refresh = useContext(RefreshContext);
   const issueCodes = issues.map((i) => i.code);
   const suggestion = suggestName(currentName, issueCodes);
+  const hasMissingYear = issueCodes.includes("SHOW_MISSING_YEAR");
 
   const [newName, setNewName] = useState(suggestion ?? currentName);
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
@@ -165,6 +231,11 @@ function RenamePanel({
     }
   }
 
+  function handleYearSelect(name: string, year: number) {
+    setNewName(`${name} (${year})`);
+    setStatus("idle");
+  }
+
   return (
     <div className="mx-2 mb-2 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
       <p className="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
@@ -192,6 +263,7 @@ function RenamePanel({
           {status === "loading" ? "Applying…" : "Apply"}
         </button>
       </div>
+      {hasMissingYear && <YearLookup showName={currentName} onSelect={handleYearSelect} />}
       {status === "success" && (
         <p data-testid="rename-success" className="mt-1.5 text-xs font-medium text-green-600">
           Renamed successfully. Refreshing…
