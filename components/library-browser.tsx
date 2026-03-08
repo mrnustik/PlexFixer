@@ -55,7 +55,11 @@ function makeOp(itemPath: string, name: string, issueCodes: string[]): Selection
 
 function collectMovieOps(movies: ValidatedMovie[]): SelectionOp[] {
   return movies.flatMap((movie) => {
-    const op = makeOp(movie.path, movie.name, movie.issues.map((i) => i.code));
+    const op = makeOp(
+      movie.path,
+      movie.name,
+      movie.issues.map((i) => i.code)
+    );
     return op ? [op] : [];
   });
 }
@@ -63,13 +67,25 @@ function collectMovieOps(movies: ValidatedMovie[]): SelectionOp[] {
 function collectTvOps(shows: ValidatedShow[]): SelectionOp[] {
   const ops: SelectionOp[] = [];
   for (const show of shows) {
-    const showOp = makeOp(show.path, show.name, show.issues.map((i) => i.code));
+    const showOp = makeOp(
+      show.path,
+      show.name,
+      show.issues.map((i) => i.code)
+    );
     if (showOp) ops.push(showOp);
     for (const season of show.seasons) {
-      const seasonOp = makeOp(season.path, season.name, season.issues.map((i) => i.code));
+      const seasonOp = makeOp(
+        season.path,
+        season.name,
+        season.issues.map((i) => i.code)
+      );
       if (seasonOp) ops.push(seasonOp);
       for (const ep of season.episodes) {
-        const epOp = makeOp(ep.path, ep.name, ep.issues.map((i) => i.code));
+        const epOp = makeOp(
+          ep.path,
+          ep.name,
+          ep.issues.map((i) => i.code)
+        );
         if (epOp) ops.push(epOp);
       }
     }
@@ -209,7 +225,11 @@ function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssue
   const status = getStatus(episode.issues);
   if (onlyIssues && status === "valid") return null;
 
-  const op = makeOp(episode.path, episode.name, episode.issues.map((i) => i.code));
+  const op = makeOp(
+    episode.path,
+    episode.name,
+    episode.issues.map((i) => i.code)
+  );
 
   return (
     <div className="pl-2">
@@ -254,7 +274,11 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
     (e) => !onlyIssues || getStatus(e.issues) !== "valid"
   );
 
-  const op = makeOp(season.path, season.name, season.issues.map((i) => i.code));
+  const op = makeOp(
+    season.path,
+    season.name,
+    season.issues.map((i) => i.code)
+  );
 
   // Loose episode files — no season header, just render episodes
   if (season.name === "__loose__") {
@@ -317,7 +341,11 @@ function ShowRow({ show, onlyIssues }: { show: ValidatedShow; onlyIssues: boolea
 
   const visibleSeasons = show.seasons.filter((s) => !onlyIssues || seasonStatus(s) !== "valid");
 
-  const op = makeOp(show.path, show.name, show.issues.map((i) => i.code));
+  const op = makeOp(
+    show.path,
+    show.name,
+    show.issues.map((i) => i.code)
+  );
 
   return (
     <div className="border-b border-gray-100 last:border-b-0 dark:border-gray-700">
@@ -364,7 +392,11 @@ function MovieRow({ movie, onlyIssues }: { movie: ValidatedMovie; onlyIssues: bo
   const status = getStatus(movie.issues);
   if (onlyIssues && status === "valid") return null;
 
-  const op = makeOp(movie.path, movie.name, movie.issues.map((i) => i.code));
+  const op = makeOp(
+    movie.path,
+    movie.name,
+    movie.issues.map((i) => i.code)
+  );
 
   return (
     <div className="border-b border-gray-100 last:border-b-0 dark:border-gray-700">
@@ -524,7 +556,7 @@ function BulkPreviewModal({
               {operations.map((op) => (
                 <div
                   key={op.from}
-                  className="rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
+                  className="rounded-md bg-gray-50 p-2 font-mono text-xs dark:bg-gray-700"
                 >
                   <div className="text-gray-400 line-through dark:text-gray-500">
                     {fileName(op.from)}
@@ -580,7 +612,7 @@ function BulkPreviewModal({
               {opResults.map((r) => (
                 <div
                   key={r.from}
-                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
+                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 font-mono text-xs dark:bg-gray-700"
                 >
                   <span className={r.success ? "text-green-600" : "text-red-500"}>
                     {r.success ? "✓" : "✕"}
@@ -633,7 +665,7 @@ function BulkPreviewModal({
               {undoResults.map((r) => (
                 <div
                   key={r.from}
-                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
+                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 font-mono text-xs dark:bg-gray-700"
                 >
                   <span className={r.success ? "text-green-600" : "text-red-500"}>
                     {r.success ? "✓" : "✕"}

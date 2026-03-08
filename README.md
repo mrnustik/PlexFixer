@@ -45,11 +45,11 @@ docker compose up -d
 
 The following environment variables can be set:
 
-| Variable | Default | Description |
-|---|---|---|
-| `PLEX_TV_LIBRARY_PATHS` | `/media/tv` | Path to your TV library |
-| `PLEX_MOVIES_LIBRARY_PATHS` | `/media/movies` | Path to your movies library |
-| `PORT` | `3000` | Host port to expose the app on |
+| Variable                    | Default         | Description                    |
+| --------------------------- | --------------- | ------------------------------ |
+| `PLEX_TV_LIBRARY_PATHS`     | `/media/tv`     | Path to your TV library        |
+| `PLEX_MOVIES_LIBRARY_PATHS` | `/media/movies` | Path to your movies library    |
+| `PORT`                      | `3000`          | Host port to expose the app on |
 
 You can also create a `.env` file in the project root:
 
@@ -86,5 +86,3 @@ pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-
