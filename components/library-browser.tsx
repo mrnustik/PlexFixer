@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import type {
   LibraryValidationResult,
   ValidatedFile,
@@ -848,7 +848,7 @@ export default function LibraryBrowser() {
   const [openPaths, setOpenPaths] = useState<Set<string>>(new Set());
 
   const openPathsCtx: OpenPathsCtx = {
-    isOpen: (path) => openPaths.has(path) || searchOpenPaths.has(path),
+    isOpen: (path) => openPaths.has(path) || searchOpenPathsArr.includes(path),
     toggle: (path) =>
       setOpenPaths((prev) => {
         const next = new Set(prev);
@@ -905,27 +905,27 @@ export default function LibraryBrowser() {
   }, [refreshKey]);
 
   // Paths that should be auto-opened because a child matches the search query
-  const searchOpenPaths = useMemo(() => {
-    const paths = new Set<string>();
-    if (!query || !data) return paths;
+  function computeSearchOpenPaths(): string[] {
+    if (!query || !data) return [];
+    const paths: string[] = [];
     for (const show of data.tv) {
       if (show.name.toLowerCase().includes(query)) continue;
       for (const season of show.seasons) {
         if (season.name.toLowerCase().includes(query)) {
-          paths.add(show.path);
+          paths.push(show.path);
           continue;
         }
         for (const ep of season.episodes) {
           if (ep.name.toLowerCase().includes(query)) {
-            paths.add(show.path);
-            paths.add(season.path);
+            paths.push(show.path, season.path);
             break;
           }
         }
       }
     }
     return paths;
-  }, [query, data]);
+  }
+  const searchOpenPathsArr = computeSearchOpenPaths();
 
   if (loading) {
     return (
