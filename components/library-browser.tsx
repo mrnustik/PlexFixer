@@ -20,6 +20,8 @@ type BulkSelectionCtx = {
   selected: Map<string, SelectionOp>;
   toggle: (op: SelectionOp) => void;
   selectAll: (ops: SelectionOp[]) => void;
+  addToSelection: (ops: SelectionOp[]) => void;
+  removeFromSelection: (paths: string[]) => void;
   clear: () => void;
 };
 
@@ -27,6 +29,8 @@ const BulkSelectionContext = createContext<BulkSelectionCtx>({
   selected: new Map(),
   toggle: () => {},
   selectAll: () => {},
+  addToSelection: () => {},
+  removeFromSelection: () => {},
   clear: () => {},
 });
 
@@ -345,6 +349,7 @@ function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssue
 
 function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues: boolean }) {
   const { isOpen, toggle } = useContext(OpenPathsContext);
+  const { selected, addToSelection, removeFromSelection } = useContext(BulkSelectionContext);
   const status = seasonStatus(season);
   const open = isOpen(season.path);
 
@@ -359,6 +364,29 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
     season.name,
     season.issues.map((i) => i.code)
   );
+
+  // All fixable ops within this season (season itself + episodes)
+  const seasonOps: SelectionOp[] = [
+    ...(op ? [op] : []),
+    ...season.episodes.flatMap((ep) => {
+      const epOp = makeOp(
+        ep.path,
+        ep.name,
+        ep.issues.map((i) => i.code)
+      );
+      return epOp ? [epOp] : [];
+    }),
+  ];
+  const allSeasonSelected = seasonOps.length > 0 && seasonOps.every((o) => selected.has(o.from));
+
+  function toggleSeasonSelection(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (allSeasonSelected) {
+      removeFromSelection(seasonOps.map((o) => o.from));
+    } else {
+      addToSelection(seasonOps);
+    }
+  }
 
   // Loose episode files — no season header, just render episodes
   if (season.name === "__loose__") {
@@ -396,6 +424,15 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
             {visibleEpisodes.length} ep{visibleEpisodes.length !== 1 ? "s" : ""}
           </span>
         </button>
+        {seasonOps.length > 0 && (
+          <button
+            data-testid="season-select-all"
+            onClick={toggleSeasonSelection}
+            className="shrink-0 text-xs text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
+          >
+            {allSeasonSelected ? "Deselect all" : "Select all"}
+          </button>
+        )}
       </div>
       {open && season.issues.length > 0 && (
         <div className="px-2 pb-1">
@@ -887,6 +924,20 @@ export default function LibraryBrowser() {
     },
     selectAll(ops) {
       setSelected(new Map(ops.map((op) => [op.from, op])));
+    },
+    addToSelection(ops) {
+      setSelected((prev) => {
+        const next = new Map(prev);
+        ops.forEach((op) => next.set(op.from, op));
+        return next;
+      });
+    },
+    removeFromSelection(paths) {
+      setSelected((prev) => {
+        const next = new Map(prev);
+        paths.forEach((p) => next.delete(p));
+        return next;
+      });
     },
     clear() {
       setSelected(new Map());

@@ -366,6 +366,42 @@ test.describe("PlexFixer library browser", () => {
     }
   });
 
+  // ---- Season select all ----
+
+  test("season select all button appears for seasons with fixable issues", async ({ page }) => {
+    // Show.With.Dots.(2020) has an episode with EPISODE_DOTS_INSTEAD_OF_SPACES (auto-fixable)
+    await page.locator("button", { hasText: "Show.With.Dots.(2020)" }).click();
+    await expect(page.getByTestId("season-select-all").first()).toBeVisible();
+  });
+
+  test("season select all selects all fixable items in the season", async ({ page }) => {
+    await page.locator("button", { hasText: "Show.With.Dots.(2020)" }).click();
+    await page.getByTestId("season-select-all").first().click();
+    // The bulk action bar should appear, confirming items were selected
+    await expect(page.getByTestId("bulk-action-bar")).toBeVisible();
+  });
+
+  test("season select all toggles to deselect all", async ({ page }) => {
+    await page.locator("button", { hasText: "Show.With.Dots.(2020)" }).click();
+    const btn = page.getByTestId("season-select-all").first();
+    await btn.click(); // select all
+    await expect(btn).toHaveText("Deselect all");
+    await btn.click(); // deselect all
+    await expect(btn).toHaveText("Select all");
+    await expect(page.getByTestId("bulk-action-bar")).not.toBeVisible();
+  });
+
+  test("season select all does not appear for seasons with no fixable issues", async ({ page }) => {
+    // Breaking Bad (2008) Season 01 has valid episodes — no auto-fixable suggestions
+    await page.locator("button", { hasText: "Breaking Bad (2008)" }).click();
+    // The season-select-all button should not be present
+    const showRow = page
+      .locator("div")
+      .filter({ hasText: /Breaking Bad \(2008\)/ })
+      .first();
+    await expect(showRow.getByTestId("season-select-all")).not.toBeVisible();
+  });
+
   // ---- Search ----
 
   test("search input is visible", async ({ page }) => {
