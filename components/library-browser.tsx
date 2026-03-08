@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type {
   LibraryValidationResult,
   ValidatedFile,
@@ -848,7 +848,7 @@ export default function LibraryBrowser() {
   const [openPaths, setOpenPaths] = useState<Set<string>>(new Set());
 
   const openPathsCtx: OpenPathsCtx = {
-    isOpen: (path) => openPaths.has(path),
+    isOpen: (path) => openPaths.has(path) || searchOpenPaths.has(path),
     toggle: (path) =>
       setOpenPaths((prev) => {
         const next = new Set(prev);
@@ -904,29 +904,27 @@ export default function LibraryBrowser() {
       .finally(() => setLoading(false));
   }, [refreshKey]);
 
-  // Auto-open shows/seasons that match only through child names
-  useEffect(() => {
-    if (!query || !data) return;
-    setOpenPaths((prev) => {
-      const next = new Set(prev);
-      for (const show of data.tv) {
-        if (show.name.toLowerCase().includes(query)) continue;
-        for (const season of show.seasons) {
-          if (season.name.toLowerCase().includes(query)) {
-            next.add(show.path);
-            continue;
-          }
-          for (const ep of season.episodes) {
-            if (ep.name.toLowerCase().includes(query)) {
-              next.add(show.path);
-              next.add(season.path);
-              break;
-            }
+  // Paths that should be auto-opened because a child matches the search query
+  const searchOpenPaths = useMemo(() => {
+    const paths = new Set<string>();
+    if (!query || !data) return paths;
+    for (const show of data.tv) {
+      if (show.name.toLowerCase().includes(query)) continue;
+      for (const season of show.seasons) {
+        if (season.name.toLowerCase().includes(query)) {
+          paths.add(show.path);
+          continue;
+        }
+        for (const ep of season.episodes) {
+          if (ep.name.toLowerCase().includes(query)) {
+            paths.add(show.path);
+            paths.add(season.path);
+            break;
           }
         }
       }
-      return next;
-    });
+    }
+    return paths;
   }, [query, data]);
 
   if (loading) {
