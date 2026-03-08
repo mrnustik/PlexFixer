@@ -87,8 +87,9 @@ function IssueList({ issues }: { issues: ValidationIssue[] }) {
           <span className={issue.severity === "error" ? "text-red-500" : "text-amber-500"}>
             {issue.severity === "error" ? "✕" : "⚠"}
           </span>
-          <span className="text-gray-600">
-            <span className="font-mono text-xs text-gray-400">{issue.code}</span> {issue.message}
+          <span className="text-gray-600 dark:text-gray-400">
+            <span className="font-mono text-xs text-gray-400 dark:text-gray-500">{issue.code}</span>{" "}
+            {issue.message}
           </span>
         </li>
       ))}
@@ -143,13 +144,17 @@ function RenamePanel({
   }
 
   return (
-    <div className="mx-2 mb-2 rounded-md border border-gray-200 bg-gray-50 p-3">
-      <p className="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase">Rename</p>
-      <div className="mb-1 font-mono text-xs text-gray-400 line-through">{currentName}</div>
+    <div className="mx-2 mb-2 rounded-md border border-gray-200 bg-gray-50 p-3 dark:border-gray-700 dark:bg-gray-800">
+      <p className="mb-1.5 text-xs font-medium tracking-wide text-gray-500 uppercase dark:text-gray-400">
+        Rename
+      </p>
+      <div className="mb-1 font-mono text-xs text-gray-400 line-through dark:text-gray-500">
+        {currentName}
+      </div>
       <div className="flex gap-2">
         <input
           data-testid="rename-input"
-          className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 font-mono text-xs text-gray-800 focus:border-blue-400 focus:outline-none"
+          className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 font-mono text-xs text-gray-800 focus:border-blue-400 focus:outline-none dark:border-gray-600 dark:bg-gray-900 dark:text-gray-200 dark:focus:border-blue-500"
           value={newName}
           onChange={(e) => {
             setNewName(e.target.value);
@@ -208,16 +213,18 @@ function EpisodeRow({ episode, onlyIssues }: { episode: ValidatedFile; onlyIssue
 
   return (
     <div className="pl-2">
-      <div className="flex w-full items-center gap-2 rounded px-2 py-1 hover:bg-gray-50">
+      <div className="flex w-full items-center gap-2 rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700">
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left text-sm"
           onClick={() => episode.issues.length > 0 && setOpen((o) => !o)}
         >
           <StatusBadge status={status} />
-          <span className="flex-1 truncate font-mono text-xs text-gray-700">{episode.name}</span>
+          <span className="flex-1 truncate font-mono text-xs text-gray-700 dark:text-gray-300">
+            {episode.name}
+          </span>
           {episode.issues.length > 0 && (
-            <span className="shrink-0 text-xs text-gray-400">
+            <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
               {episode.issues.length} issue{episode.issues.length > 1 ? "s" : ""}
             </span>
           )}
@@ -253,7 +260,9 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
   if (season.name === "__loose__") {
     return (
       <div className="pl-4">
-        <p className="px-2 py-0.5 font-mono text-xs text-gray-400 italic">Loose episode files</p>
+        <p className="px-2 py-0.5 font-mono text-xs text-gray-400 italic dark:text-gray-500">
+          Loose episode files
+        </p>
         {visibleEpisodes.map((ep) => (
           <EpisodeRow key={ep.path} episode={ep} onlyIssues={onlyIssues} />
         ))}
@@ -263,19 +272,23 @@ function SeasonRow({ season, onlyIssues }: { season: ValidatedSeason; onlyIssues
 
   return (
     <div className="pl-4">
-      <div className="flex w-full items-center gap-2 rounded px-2 py-1 hover:bg-gray-50">
+      <div className="flex w-full items-center gap-2 rounded px-2 py-1 hover:bg-gray-50 dark:hover:bg-gray-700">
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left text-sm"
           onClick={() => setOpen((o) => !o)}
         >
-          <span className="w-3 shrink-0 text-center text-gray-400">{open ? "▾" : "▸"}</span>
+          <span className="w-3 shrink-0 text-center text-gray-400 dark:text-gray-500">
+            {open ? "▾" : "▸"}
+          </span>
           <StatusBadge status={status} />
-          <span className="flex-1 font-medium text-gray-700">{season.name}</span>
+          <span className="flex-1 font-medium text-gray-700 dark:text-gray-300">{season.name}</span>
           {season.issues.length > 0 && (
-            <span className="shrink-0 text-xs text-gray-400">{season.issues.length} own</span>
+            <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
+              {season.issues.length} own
+            </span>
           )}
-          <span className="shrink-0 text-xs text-gray-400">
+          <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">
             {visibleEpisodes.length} ep{visibleEpisodes.length !== 1 ? "s" : ""}
           </span>
         </button>
@@ -307,22 +320,24 @@ function ShowRow({ show, onlyIssues }: { show: ValidatedShow; onlyIssues: boolea
   const op = makeOp(show.path, show.name, show.issues.map((i) => i.code));
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
-      <div className="flex w-full items-center gap-2 rounded px-2 py-2 hover:bg-gray-50">
+    <div className="border-b border-gray-100 last:border-b-0 dark:border-gray-700">
+      <div className="flex w-full items-center gap-2 rounded px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left"
           onClick={() => setOpen((o) => !o)}
         >
-          <span className="w-3 shrink-0 text-center text-sm text-gray-400">
+          <span className="w-3 shrink-0 text-center text-sm text-gray-400 dark:text-gray-500">
             {open ? "▾" : "▸"}
           </span>
           <StatusBadge status={status} size="md" />
-          <span className="flex-1 font-semibold text-gray-800">{show.name}</span>
+          <span className="flex-1 font-semibold text-gray-800 dark:text-gray-200">{show.name}</span>
           {show.issues.length > 0 && (
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                status === "error" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                status === "error"
+                  ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                  : "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
               }`}
             >
               {show.issues.length} issue{show.issues.length > 1 ? "s" : ""}
@@ -352,19 +367,21 @@ function MovieRow({ movie, onlyIssues }: { movie: ValidatedMovie; onlyIssues: bo
   const op = makeOp(movie.path, movie.name, movie.issues.map((i) => i.code));
 
   return (
-    <div className="border-b border-gray-100 last:border-b-0">
-      <div className="flex w-full items-center gap-2 rounded px-2 py-2 hover:bg-gray-50">
+    <div className="border-b border-gray-100 last:border-b-0 dark:border-gray-700">
+      <div className="flex w-full items-center gap-2 rounded px-2 py-2 hover:bg-gray-50 dark:hover:bg-gray-700">
         {op && <BulkCheckbox op={op} />}
         <button
           className="flex flex-1 items-center gap-2 text-left"
           onClick={() => movie.issues.length > 0 && setOpen((o) => !o)}
         >
           <StatusBadge status={status} size="md" />
-          <span className="flex-1 font-medium text-gray-800">{movie.name}</span>
+          <span className="flex-1 font-medium text-gray-800 dark:text-gray-200">{movie.name}</span>
           {movie.issues.length > 0 && (
             <span
               className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                status === "error" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                status === "error"
+                  ? "bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400"
+                  : "bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400"
               }`}
             >
               {movie.issues.length} issue{movie.issues.length > 1 ? "s" : ""}
@@ -414,7 +431,12 @@ function BulkPreviewModal({
           body: JSON.stringify({ from: op.from, to: op.to }),
         });
         const data = (await res.json()) as { success?: boolean; error?: string };
-        results.push({ from: op.from, to: op.to, success: data.success === true, error: data.error });
+        results.push({
+          from: op.from,
+          to: op.to,
+          success: data.success === true,
+          error: data.error,
+        });
       } catch (err) {
         results.push({
           from: op.from,
@@ -449,7 +471,12 @@ function BulkPreviewModal({
           body: JSON.stringify({ from: op.from, to: op.to }),
         });
         const data = (await res.json()) as { success?: boolean; error?: string };
-        results.push({ from: op.from, to: op.to, success: data.success === true, error: data.error });
+        results.push({
+          from: op.from,
+          to: op.to,
+          success: data.success === true,
+          error: data.error,
+        });
       } catch (err) {
         results.push({
           from: op.from,
@@ -467,7 +494,12 @@ function BulkPreviewModal({
   const succeeded = opResults.filter((r) => r.success).length;
   const failed = opResults.filter((r) => !r.success).length;
   const undoSucceeded = undoResults.filter((r) => r.success).length;
-  const totalOps = phase === "running" ? (undoResults.length > 0 ? opResults.filter((r) => r.success).length : operations.length) : 0;
+  const totalOps =
+    phase === "running"
+      ? undoResults.length > 0
+        ? opResults.filter((r) => r.success).length
+        : operations.length
+      : 0;
 
   function fileName(p: string) {
     return p.split("/").pop() ?? p;
@@ -477,20 +509,27 @@ function BulkPreviewModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div
         data-testid="bulk-preview-modal"
-        className="relative mx-4 flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl bg-white p-6 shadow-xl"
+        className="relative mx-4 flex max-h-[80vh] w-full max-w-2xl flex-col rounded-xl bg-white p-6 shadow-xl dark:bg-gray-800"
       >
         {/* Preview phase */}
         {phase === "preview" && (
           <>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Bulk Rename Preview</h2>
-            <p className="mb-3 text-sm text-gray-500">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Bulk Rename Preview
+            </h2>
+            <p className="mb-3 text-sm text-gray-500 dark:text-gray-400">
               {operations.length} item{operations.length !== 1 ? "s" : ""} will be renamed:
             </p>
             <div className="mb-4 flex-1 space-y-2 overflow-y-auto">
               {operations.map((op) => (
-                <div key={op.from} className="rounded-md bg-gray-50 p-2 text-xs font-mono">
-                  <div className="text-gray-400 line-through">{fileName(op.from)}</div>
-                  <div className="text-gray-800">→ {fileName(op.to)}</div>
+                <div
+                  key={op.from}
+                  className="rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
+                >
+                  <div className="text-gray-400 line-through dark:text-gray-500">
+                    {fileName(op.from)}
+                  </div>
+                  <div className="text-gray-800 dark:text-gray-200">→ {fileName(op.to)}</div>
                 </div>
               ))}
             </div>
@@ -498,7 +537,7 @@ function BulkPreviewModal({
               <button
                 data-testid="bulk-preview-cancel"
                 onClick={onClose}
-                className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
               >
                 Cancel
               </button>
@@ -516,12 +555,12 @@ function BulkPreviewModal({
         {/* Running phase */}
         {phase === "running" && (
           <>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
               {undoResults.length > 0 ? "Undoing…" : "Renaming…"}
             </h2>
             <div className="flex flex-col items-center gap-4 py-8">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
-              <p data-testid="bulk-progress" className="text-sm text-gray-500">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500 dark:border-gray-700" />
+              <p data-testid="bulk-progress" className="text-sm text-gray-500 dark:text-gray-400">
                 Renaming {currentIndex} of {totalOps}…
               </p>
             </div>
@@ -531,23 +570,27 @@ function BulkPreviewModal({
         {/* Done phase */}
         {phase === "done" && (
           <>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Rename Complete</h2>
-            <p data-testid="bulk-summary" className="mb-4 text-sm text-gray-700">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Rename Complete
+            </h2>
+            <p data-testid="bulk-summary" className="mb-4 text-sm text-gray-700 dark:text-gray-300">
               {succeeded} succeeded, {failed} failed
             </p>
             <div className="mb-4 flex-1 space-y-2 overflow-y-auto">
               {opResults.map((r) => (
                 <div
                   key={r.from}
-                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono"
+                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
                 >
                   <span className={r.success ? "text-green-600" : "text-red-500"}>
                     {r.success ? "✓" : "✕"}
                   </span>
                   <span className="flex-1">
-                    <span className="text-gray-400 line-through">{fileName(r.from)}</span>
+                    <span className="text-gray-400 line-through dark:text-gray-500">
+                      {fileName(r.from)}
+                    </span>
                     {" → "}
-                    <span className="text-gray-800">{fileName(r.to)}</span>
+                    <span className="text-gray-800 dark:text-gray-200">{fileName(r.to)}</span>
                   </span>
                   {r.error && <span className="text-red-500">{r.error}</span>}
                 </div>
@@ -558,7 +601,7 @@ function BulkPreviewModal({
                 <button
                   data-testid="bulk-preview-undo"
                   onClick={undo}
-                  className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100"
+                  className="rounded px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-700"
                 >
                   Undo successful renames
                 </button>
@@ -580,23 +623,27 @@ function BulkPreviewModal({
         {/* Undone phase */}
         {phase === "undone" && (
           <>
-            <h2 className="mb-4 text-lg font-semibold text-gray-900">Undo Complete</h2>
-            <p data-testid="bulk-summary" className="mb-4 text-sm text-gray-700">
+            <h2 className="mb-4 text-lg font-semibold text-gray-900 dark:text-gray-100">
+              Undo Complete
+            </h2>
+            <p data-testid="bulk-summary" className="mb-4 text-sm text-gray-700 dark:text-gray-300">
               {undoSucceeded} rename{undoSucceeded !== 1 ? "s" : ""} undone
             </p>
             <div className="mb-4 flex-1 space-y-2 overflow-y-auto">
               {undoResults.map((r) => (
                 <div
                   key={r.from}
-                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono"
+                  className="flex items-start gap-2 rounded-md bg-gray-50 p-2 text-xs font-mono dark:bg-gray-700"
                 >
                   <span className={r.success ? "text-green-600" : "text-red-500"}>
                     {r.success ? "✓" : "✕"}
                   </span>
                   <span className="flex-1">
-                    <span className="text-gray-400 line-through">{fileName(r.from)}</span>
+                    <span className="text-gray-400 line-through dark:text-gray-500">
+                      {fileName(r.from)}
+                    </span>
                     {" → "}
-                    <span className="text-gray-800">{fileName(r.to)}</span>
+                    <span className="text-gray-800 dark:text-gray-200">{fileName(r.to)}</span>
                   </span>
                   {r.error && <span className="text-red-500">{r.error}</span>}
                 </div>
@@ -628,19 +675,23 @@ function SummaryBar({ data, tab }: { data: LibraryValidationResult; tab: "tv" | 
     const totalEpisodes = data.tv.flatMap((s) => s.seasons.flatMap((se) => se.episodes)).length;
     const issuesCount = data.tv.filter((s) => showStatus(s) !== "valid").length;
     return (
-      <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+      <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
         <span>
-          <span className="font-semibold text-gray-800">{data.tv.length}</span> shows
+          <span className="font-semibold text-gray-800 dark:text-gray-200">{data.tv.length}</span>{" "}
+          shows
         </span>
         <span>
-          <span className="font-semibold text-gray-800">{totalEpisodes}</span> episodes
+          <span className="font-semibold text-gray-800 dark:text-gray-200">{totalEpisodes}</span>{" "}
+          episodes
         </span>
         {issuesCount > 0 ? (
           <span className="font-semibold text-red-500">
             {issuesCount} show{issuesCount !== 1 ? "s" : ""} with issues
           </span>
         ) : (
-          data.tv.length > 0 && <span className="font-semibold text-green-600">All clean ✓</span>
+          data.tv.length > 0 && (
+            <span className="font-semibold text-green-600 dark:text-green-500">All clean ✓</span>
+          )
         )}
       </div>
     );
@@ -648,16 +699,19 @@ function SummaryBar({ data, tab }: { data: LibraryValidationResult; tab: "tv" | 
 
   const issuesCount = data.movies.filter((m) => getStatus(m.issues) !== "valid").length;
   return (
-    <div className="flex flex-wrap gap-4 text-sm text-gray-500">
+    <div className="flex flex-wrap gap-4 text-sm text-gray-500 dark:text-gray-400">
       <span>
-        <span className="font-semibold text-gray-800">{data.movies.length}</span> movies
+        <span className="font-semibold text-gray-800 dark:text-gray-200">{data.movies.length}</span>{" "}
+        movies
       </span>
       {issuesCount > 0 ? (
         <span className="font-semibold text-red-500">
           {issuesCount} movie{issuesCount !== 1 ? "s" : ""} with issues
         </span>
       ) : (
-        data.movies.length > 0 && <span className="font-semibold text-green-600">All clean ✓</span>
+        data.movies.length > 0 && (
+          <span className="font-semibold text-green-600 dark:text-green-500">All clean ✓</span>
+        )
       )}
     </div>
   );
@@ -682,7 +736,6 @@ export default function LibraryBrowser() {
     setRefreshKey((k) => k + 1);
   }, []);
 
-  // Clear selection when switching tabs
   function handleTabChange(newTab: "tv" | "movies") {
     setTab(newTab);
     setSelected(new Map());
@@ -722,8 +775,8 @@ export default function LibraryBrowser() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center gap-3 py-20 text-gray-400">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500" />
+      <div className="flex flex-col items-center gap-3 py-20 text-gray-400 dark:text-gray-500">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-blue-500 dark:border-gray-700" />
         <p className="text-sm">Scanning library…</p>
       </div>
     );
@@ -731,7 +784,7 @@ export default function LibraryBrowser() {
 
   if (fetchError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+      <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
         Failed to load library: {fetchError}
       </div>
     );
@@ -739,8 +792,7 @@ export default function LibraryBrowser() {
 
   if (!data) return null;
 
-  const selectableOps =
-    tab === "tv" ? collectTvOps(data.tv) : collectMovieOps(data.movies);
+  const selectableOps = tab === "tv" ? collectTvOps(data.tv) : collectMovieOps(data.movies);
   const allSelected =
     selectableOps.length > 0 && selectableOps.every((op) => selected.has(op.from));
 
@@ -758,15 +810,15 @@ export default function LibraryBrowser() {
         <div className="space-y-4">
           {/* Tabs + filter */}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex gap-1 rounded-lg bg-gray-100 p-1">
+            <div className="flex gap-1 rounded-lg bg-gray-100 p-1 dark:bg-gray-700">
               {(["tv", "movies"] as const).map((t) => (
                 <button
                   key={t}
                   onClick={() => handleTabChange(t)}
                   className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
                     tab === t
-                      ? "bg-white text-gray-900 shadow-sm"
-                      : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-gray-100"
+                      : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                   }`}
                 >
                   {t === "tv" ? `TV Shows (${data.tv.length})` : `Movies (${data.movies.length})`}
@@ -778,12 +830,12 @@ export default function LibraryBrowser() {
                 <button
                   data-testid="bulk-select-all-button"
                   onClick={handleSelectAll}
-                  className="text-sm text-blue-600 hover:text-blue-800"
+                  className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
                 >
                   {allSelected ? "Deselect all" : "Select all with issues"}
                 </button>
               )}
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none">
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-600 select-none dark:text-gray-400">
                 <input
                   type="checkbox"
                   checked={onlyIssues}
@@ -800,7 +852,7 @@ export default function LibraryBrowser() {
 
           {/* Scan errors */}
           {data.errors.length > 0 && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/30 dark:text-red-400">
               <p className="font-medium">Scan errors ({data.errors.length})</p>
               <ul className="mt-1 space-y-0.5">
                 {data.errors.map((e, i) => (
@@ -813,10 +865,10 @@ export default function LibraryBrowser() {
           )}
 
           {/* Content */}
-          <div className="rounded-lg border border-gray-200 bg-white p-1">
+          <div className="rounded-lg border border-gray-200 bg-white p-1 dark:border-gray-700 dark:bg-gray-800">
             {tab === "tv" &&
               (data.tv.length === 0 ? (
-                <p className="py-12 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
                   No TV library configured. Set{" "}
                   <code className="font-mono text-xs">PLEX_TV_LIBRARY_PATHS</code> in your
                   environment.
@@ -828,7 +880,7 @@ export default function LibraryBrowser() {
               ))}
             {tab === "movies" &&
               (data.movies.length === 0 ? (
-                <p className="py-12 text-center text-sm text-gray-400">
+                <p className="py-12 text-center text-sm text-gray-400 dark:text-gray-500">
                   No movies library configured. Set{" "}
                   <code className="font-mono text-xs">PLEX_MOVIES_LIBRARY_PATHS</code> in your
                   environment.
@@ -844,16 +896,16 @@ export default function LibraryBrowser() {
           {selected.size > 0 && (
             <div
               data-testid="bulk-action-bar"
-              className="sticky bottom-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg"
+              className="sticky bottom-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 shadow-lg dark:border-blue-800 dark:bg-blue-900/30"
             >
-              <span className="text-sm font-medium text-blue-800">
+              <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                 {selected.size} item{selected.size !== 1 ? "s" : ""} selected
               </span>
               <div className="flex gap-2">
                 <button
                   data-testid="bulk-clear-button"
                   onClick={bulkCtx.clear}
-                  className="rounded px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100"
+                  className="rounded px-3 py-1.5 text-sm text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900"
                 >
                   Clear
                 </button>

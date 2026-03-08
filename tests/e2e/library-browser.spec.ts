@@ -208,6 +208,35 @@ test.describe("PlexFixer library browser", () => {
     await expect(input).toHaveValue("Show Without Year");
   });
 
+  // ---- Dark mode ----
+
+  test("theme toggle is visible in the header", async ({ page }) => {
+    await expect(page.getByTestId("theme-toggle")).toBeVisible();
+    await expect(page.getByTestId("theme-option-system")).toBeVisible();
+    await expect(page.getByTestId("theme-option-light")).toBeVisible();
+    await expect(page.getByTestId("theme-option-dark")).toBeVisible();
+  });
+
+  test("clicking Dark applies the dark class to the html element", async ({ page }) => {
+    await page.getByTestId("theme-option-dark").click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+  });
+
+  test("clicking Light removes the dark class", async ({ page }) => {
+    await page.getByTestId("theme-option-dark").click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.getByTestId("theme-option-light").click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
+  });
+
+  test("theme choice persists across page reload", async ({ page }) => {
+    await page.getByTestId("theme-option-dark").click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await page.reload();
+    await waitForLibrary(page);
+    await expect(page.locator("html")).toHaveClass(/dark/);
+  });
+
   // ---- Bulk rename ----
 
   test("checkboxes appear on rows with suggestions, not on valid rows", async ({ page }) => {
